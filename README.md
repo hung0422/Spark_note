@@ -5,7 +5,7 @@
 *  建立RDD物件
 ```
 from pyspark import SparkContext
-dc = SparkContext()
+sc = SparkContext()
 rdd = sc.parallelize([1,2,3])
 # or
 rdd = sc.textFiles(<檔案路徑>)
