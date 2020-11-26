@@ -2,6 +2,10 @@
 
 ## Spark Core
 
+* 啟動PySpark
+```
+pyspark --master spark://master:7077 --executor-cores 4 --executor-memory 6G
+```
 *  建立RDD物件
 ```
 from pyspark import SparkContext
@@ -171,3 +175,55 @@ In [99]: accum.value
 ```
 Out[99]: 10
 ```
+
+## Spark SQL
+
+* 用Spark連結MySQL
+    * 下載[MySQL的JDBC驅動程式](https://mvnrepository.com/artifact/mysql/mysql-connector-java/8.0.19)，如：mysql-connector-java-8.0.19.jar：
+    * 把該驅動程式拷貝到Spark的安裝目錄"/usr/local/spark/jars/"下
+    * 啟動Spark
+    ```
+    pyspark --master spark://devenv:7077 --jars mysql-connector-java-8.0.19.jar --executor-cores 4 --executor-memory 6G
+
+    ```
+    * 讀取mysql:
+    ```
+    prop = {'user': 'user',
+       'password': '123456',
+       'driver': 'com.mysql.cj.jdbc.Driver'}
+       
+    url = 'jdbc:mysql://host:port/database_name?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC'
+    
+    df = spark.read.jdbc(url=url, table='table_name', properties=prop)
+    
+    df.show()
+    ```
+* 語法:
+    * 範例1
+    ```
+    df.createOrReplaceTempView('product')
+    spark.sql('select productName, unitprice from product where unitprice > 5000 order by unitprice desc limit 10').show()
+    ```
+    * 等同於
+      ```
+      df.select(df['productName'], df['unitprice']).filter((df['unitprice'] > 5000)).orderBy(df['unitprice'].desc()).limit(10).show()
+      ```
+    * 範例2
+    ```
+    df.createOrReplaceTempView('shoppinglist')
+    df2.createOrReplaceTempView('product')
+    spark.sql('select s.userID, s.shoppingdate, p.productName, p.unitprice from shoppinglist s join product p on s.productID = p.productID').show()
+    ```
+    * 等同於
+      ```
+      df.join(df2, df['productID'] == df2['productID']).select(df['userID'], df['shoppingdate'], df2['productName'], df2['unitprice']).show()
+      ```
+    * 範例3
+    ```
+    df.createOrReplaceTempView('shoppinglist')
+    df2.createOrReplaceTempView('product')
+    spark.sql('select s.userID, s.shoppingdate, p.productName, p.unitprice from shoppinglist s join product p on s.productID = p.productID where s.userID = "Ub52d90a6b2c9b05bed228af9d7538a6b" ').show()
+    ```
+    * 等同於
+      ```
+      df.join(df2, df['productID'] == df2['productID']).select(df['userID'], df['shoppingdate'], df2['productName'], df2['unitprice']).filter(df['userID'] == "Ub52d90a6b2c9b05bed228af9d7538a6b").show()
